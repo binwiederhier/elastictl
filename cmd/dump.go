@@ -26,13 +26,14 @@ func execDump(c *cli.Context) error {
 		return cli.Exit("invalid syntax: ES host and/or index missing", 1)
 	}
 
+	host := c.Args().Get(0)
 	index := c.Args().Get(1)
-	rootURI := fmt.Sprintf("http://%s/%s", c.Args().Get(0), index)
-
+	rootURI := fmt.Sprintf("http://%s", host)
 	client := &http.Client{}
 
 	// Dump mapping first
-	req, err := http.NewRequest("GET", rootURI, nil)
+	rootIndexURI := fmt.Sprintf("http://%s/%s", host, index)
+	req, err := http.NewRequest("GET", rootIndexURI, nil)
 	if err != nil {
 		return err
 	}
@@ -48,7 +49,7 @@ func execDump(c *cli.Context) error {
 	fmt.Fprintln(c.App.Writer, mapping)
 
 	// Initial search request
-	uri := fmt.Sprintf("%s/%s/_search?scroll=1m", rootURI, index)
+	uri := fmt.Sprintf("%s/_search?scroll=1m", rootIndexURI)
 	req, err = http.NewRequest("POST", uri, strings.NewReader(`{"size":10000}`))
 	if err != nil {
 		return err
@@ -68,9 +69,9 @@ func execDump(c *cli.Context) error {
 			return err
 		}
 
-		scrollId := gjson.GetBytes(body, "_scroll_id")
-		if !scrollId.Exists() {
-			return cli.Exit("no scroll id", 1)
+		scrollID := gjson.GetBytes(body, "_scroll_id")
+		if !scrollID.Exists() {
+			return cli.Exit("no scroll id: " + string(body), 1)
 		}
 
 		hits := gjson.GetBytes(body, "hits.hits")
@@ -83,6 +84,7 @@ func execDump(c *cli.Context) error {
 		}
 
 		if len(hits.Array()) == 0 {
+			fmt.Fprintln(c.App.ErrWriter, "done")
 			break
 		}
 
@@ -91,7 +93,7 @@ func execDump(c *cli.Context) error {
 		}
 
 		uri := fmt.Sprintf("%s/_search/scroll", rootURI)
-		postBody := fmt.Sprintf(`{"scroll":"1m","scroll_id":"%s"}`, scrollId.String())
+		postBody := fmt.Sprintf(`{"scroll":"1m","scroll_id":"%s"}`, scrollID.String())
 		req, err := http.NewRequest("POST", uri, strings.NewReader(postBody))
 		if err != nil {
 			return err

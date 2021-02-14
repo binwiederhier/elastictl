@@ -21,7 +21,7 @@ var cmdBlast = &cli.Command{
 	UsageText: "elasticblaster blast SERVER INDEX",
 	Action:    execBlast,
 	Flags: []cli.Flag{
-		&cli.IntFlag{Name: "workers", Aliases: []string{"w"}, Value: 5, Usage: "number of concurrent workers"},
+		&cli.IntFlag{Name: "workers", Aliases: []string{"w"}, Value: 30, Usage: "number of concurrent workers"},
 	},
 }
 
@@ -71,12 +71,14 @@ func execBlast(c *cli.Context) error {
 		docs <- scanner.Text()
 	}
 
+	// FIXME this is a race and may lead to the last doc not being indexed, add wait group
+	
 	return nil
 }
 
 func blastWorker(worker int, client *http.Client, docs chan string, rootURI string) {
 	for doc := range docs {
-		id := gjson.Get(doc, "_id").String()
+		id := sanitizeID(gjson.Get(doc, "_id").String()) // FIXME
 		dtype := gjson.Get(doc, "_type").String()
 		source := gjson.Get(doc, "_source").String()
 		uri := fmt.Sprintf("%s/%s/%s", rootURI, dtype, id)
@@ -97,5 +99,9 @@ func blastWorker(worker int, client *http.Client, docs chan string, rootURI stri
 
 		log.Printf("[worker %d] resp = %s\n", worker, response.Status)
 	}
+}
+
+func sanitizeID(s string) string {
+	return strings.ReplaceAll(strings.ReplaceAll(s, "/", "-"), ":", "-")
 }
 
