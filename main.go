@@ -18,7 +18,7 @@ func main() {
 	cli.AppHelpTemplate += fmt.Sprintf(`
 Try 'elasticblaster COMMAND --help' for more information.
 
-pcopy %s (%s), runtime %s, built at %s
+elasticblaster %s (%s), runtime %s, built at %s
 Copyright (C) 2021 Philipp C. Heckel, distributed under the Apache License 2.0
 `, version, commit[:7], runtime.Version(), date)
 

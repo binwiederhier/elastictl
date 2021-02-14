@@ -1,0 +1,45 @@
+before:
+  hooks:
+    - go mod download
+builds:
+  - binary: elasticblaster
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+nfpms:
+  -
+    package_name: elasticblaster
+    file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Arch }}"
+    homepage: https://heckel.io/elasticblaster
+    maintainer: Philipp C. Heckel <philipp.heckel@gmail.com>
+    description: Simple load generating and index copying tool for Elasticsearch
+    license: Apache 2.0
+    formats:
+      - deb
+      - rpm
+    bindir: /usr/bin
+archives:
+  - replacements:
+      386: i386
+      amd64: x86_64
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+dockers:
+  - dockerfile: Dockerfile
+    ids:
+      - elasticblaster
+    image_templates:
+      - "binwiederhier/elasticblaster:latest"
+      - "binwiederhier/elasticblaster:{{ .Tag }}"
+      - "binwiederhier/elasticblaster:v{{ .Major }}.{{ .Minor }}"
