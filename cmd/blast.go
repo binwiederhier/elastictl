@@ -10,7 +10,9 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -51,7 +53,6 @@ func execBlast(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-
 	_, err = client.Do(req)
 	if err != nil {
 		return err
@@ -60,25 +61,27 @@ func execBlast(c *cli.Context) error {
 	// Start workers
 	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = workers // Avoid opening/closing connections
 
-	docs := make(chan string)
+	wg := &sync.WaitGroup{}
+	docsChan := make(chan string)
 	for i := 0; i < workers; i++ {
-		go func(worker int) {
-			blastWorker(worker, client, docs, rootURI)
-		}(i)
+		wg.Add(1)
+		go blastWorker(wg, docsChan, client, rootURI)
 	}
 
 	for scanner.Scan() {
-		docs <- scanner.Text()
+		docsChan <- scanner.Text()
 	}
 
-	// FIXME this is a race and may lead to the last doc not being indexed, add wait group
-	
+	close(docsChan)
+	wg.Wait()
+
 	return nil
 }
 
-func blastWorker(worker int, client *http.Client, docs chan string, rootURI string) {
-	for doc := range docs {
-		id := sanitizeID(gjson.Get(doc, "_id").String()) // FIXME
+func blastWorker(wg *sync.WaitGroup, docsChan chan string, client *http.Client, rootURI string) {
+	defer wg.Done()
+	for doc := range docsChan {
+		id := url.QueryEscape(gjson.Get(doc, "_id").String())
 		dtype := gjson.Get(doc, "_type").String()
 		source := gjson.Get(doc, "_source").String()
 		uri := fmt.Sprintf("%s/%s/%s", rootURI, dtype, id)
@@ -97,11 +100,7 @@ func blastWorker(worker int, client *http.Client, docs chan string, rootURI stri
 			response.Body.Close()
 		}
 
-		log.Printf("[worker %d] resp = %s\n", worker, response.Status)
+		log.Printf("resp = %s\n", response.Status)
 	}
-}
-
-func sanitizeID(s string) string {
-	return strings.ReplaceAll(strings.ReplaceAll(s, "/", "-"), ":", "-")
 }
 
