@@ -24,12 +24,14 @@ var cmdBlast = &cli.Command{
 	Action:    execBlast,
 	Flags: []cli.Flag{
 		&cli.IntFlag{Name: "workers", Aliases: []string{"w"}, Value: 30, Usage: "number of concurrent workers"},
+		&cli.BoolFlag{Name: "nocreate", Aliases: []string{"N"}, Value: false, Usage: "do not create index"},
 	},
 }
 
 func execBlast(c *cli.Context) error {
 	rand.Seed(time.Now().UnixNano())
 	workers := c.Int("workers")
+	nocreate := c.Bool("nocreate")
 
 	if c.NArg() < 2 {
 		return cli.Exit("invalid syntax, need ES hostname/port and index", 1)
@@ -47,15 +49,17 @@ func execBlast(c *cli.Context) error {
 	}
 
 	rawMapping := scanner.Text()
-	mapping := gjson.Get(rawMapping, index)
+	if !nocreate {
+		mapping := gjson.Get(rawMapping, index)
 
-	req, err := http.NewRequest("PUT", rootURI, strings.NewReader(mapping.String()))
-	if err != nil {
-		return err
-	}
-	_, err = client.Do(req)
-	if err != nil {
-		return err
+		req, err := http.NewRequest("PUT", rootURI, strings.NewReader(mapping.String()))
+		if err != nil {
+			return err
+		}
+		_, err = client.Do(req)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Start workers
