@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 	"github.com/urfave/cli/v2"
+	"heckel.io/elasticblaster/util"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -22,69 +24,11 @@ var cmdBlast = &cli.Command{
 	UsageText: "elasticblaster blast SERVER INDEX",
 	Action:    execBlast,
 	Flags: []cli.Flag{
-		&cli.IntFlag{Name: "workers", Aliases: []string{"w"}, Value: 30, Usage: "number of concurrent workers"},
+		&cli.IntFlag{Name: "workers", Aliases: []string{"w"}, Value: 100, Usage: "number of concurrent workers"},
+		&cli.IntFlag{Name: "shards", Aliases: []string{"s"}, Value: 0, Usage: "override the number of shards on index creation"},
+		&cli.IntFlag{Name: "replicas", Aliases: []string{"r"}, Value: 0, Usage: "override the number of replicas on index creation"},
 		&cli.BoolFlag{Name: "nocreate", Aliases: []string{"N"}, Value: false, Usage: "do not create index"},
 	},
-}
-
-var spinner = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
-
-type progressBar struct {
-	started time.Time
-	count int
-	size int64
-	rendered time.Time
-	rendercount int64
-	prevlen int
-	mu sync.Mutex
-}
-
-func newProgressBar() *progressBar {
-	return &progressBar{
-		started: time.Now(),
-	}
-}
-
-func (p *progressBar) Add(size int64) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	p.count++
-	p.size += size
-	if time.Since(p.rendered) > 65 * time.Millisecond {
-		p.render(false)
-	}
-}
-
-func (p *progressBar) Done() {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	p.render(true)
-}
-
-func (p *progressBar) render(done bool) {
-	spin := spinner[p.rendercount%int64(len(spinner))]
-	count := p.count
-	countPerSec := float64(p.count) / time.Since(p.started).Seconds()
-	size := bytesToHuman(p.size)
-	sizePerSec := bytesToHuman(int64(float64(p.size) / time.Since(p.started).Seconds()))
-	if done {
-		line := fmt.Sprintf("\rindexing finished: %d docs (%.2f docs/s), %s (%s/s)", count, countPerSec, size, sizePerSec)
-		fmt.Print(line)
-		if p.prevlen > len(line) {
-			fmt.Print(strings.Repeat(" ", p.prevlen-len(line)))
-		}
-		fmt.Println()
-		p.prevlen = len(line)
-	} else {
-		line := fmt.Sprintf("\r%s indexing: %d docs (%.2f docs/s), %s (%s/s)", spin, count, countPerSec, size, sizePerSec)
-		fmt.Print(line)
-		if p.prevlen > len(line) {
-			fmt.Print(strings.Repeat(" ", p.prevlen-len(line)))
-		}
-		p.prevlen = len(line)
-	}
-	p.rendered = time.Now()
-	p.rendercount++
 }
 
 func execBlast(c *cli.Context) error {
@@ -92,6 +36,8 @@ func execBlast(c *cli.Context) error {
 
 	workers := c.Int("workers")
 	nocreate := c.Bool("nocreate")
+	shards := c.Int("shards")
+	replicas := c.Int("replicas")
 
 	if c.NArg() < 2 {
 		return cli.Exit("invalid syntax, need ES hostname/port and index", 1)
@@ -107,9 +53,22 @@ func execBlast(c *cli.Context) error {
 	if !scanner.Scan() {
 		return cli.Exit("cannot read mapping from STDIN", 1)
 	}
-	rawMapping := scanner.Text()
+	mapping := scanner.Text()
 	if !nocreate {
-		req, err := http.NewRequest("PUT", rootURI, strings.NewReader(rawMapping))
+		var err error
+		if shards > 0 {
+			mapping, err = sjson.Set(mapping, "settings.index.number_of_replicas", fmt.Sprintf("%d", shards))
+			if err != nil {
+				return err
+			}
+		}
+		if replicas > 0 {
+			mapping, err = sjson.Set(mapping, "settings.index.number_of_shards", fmt.Sprintf("%d", replicas))
+			if err != nil {
+				return err
+			}
+		}
+		req, err := http.NewRequest("PUT", rootURI, strings.NewReader(mapping))
 		if err != nil {
 			return err
 		}
@@ -127,7 +86,7 @@ func execBlast(c *cli.Context) error {
 
 	wg := &sync.WaitGroup{}
 	docsChan := make(chan string)
-	progress := newProgressBar()
+	progress := util.NewProgressBar()
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
 		go blastWorker(wg, docsChan, progress, client, rootURI)
@@ -146,7 +105,7 @@ func execBlast(c *cli.Context) error {
 	return nil
 }
 
-func blastWorker(wg *sync.WaitGroup, docsChan chan string, progress *progressBar, client *http.Client, rootURI string) {
+func blastWorker(wg *sync.WaitGroup, docsChan chan string, progress *util.ProgressBar, client *http.Client, rootURI string) {
 	defer wg.Done()
 	for doc := range docsChan {
 		id := url.QueryEscape(gjson.Get(doc, "_id").String())
@@ -174,19 +133,3 @@ func blastWorker(wg *sync.WaitGroup, docsChan chan string, progress *progressBar
 		progress.Add(int64(len(source)))
 	}
 }
-
-func bytesToHuman(b int64) string {
-	// From: https://yourbasic.org/golang/formatting-byte-size-to-human-readable-format/
-	const unit = 1024
-	if b < unit {
-		return fmt.Sprintf("%d B", b)
-	}
-	div, exp := int64(unit), 0
-	for n := b / unit; n >= unit; n /= unit {
-		div *= unit
-		exp++
-	}
-	return fmt.Sprintf("%.1f %cB",
-		float64(b)/float64(div), "kMGTPE"[exp])
-}
-
