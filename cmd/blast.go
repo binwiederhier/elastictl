@@ -109,9 +109,7 @@ func execBlast(c *cli.Context) error {
 	}
 	rawMapping := scanner.Text()
 	if !nocreate {
-		mapping := gjson.Get(rawMapping, index)
-
-		req, err := http.NewRequest("PUT", rootURI, strings.NewReader(mapping.String()))
+		req, err := http.NewRequest("PUT", rootURI, strings.NewReader(rawMapping))
 		if err != nil {
 			return err
 		}

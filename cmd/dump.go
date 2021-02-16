@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/tidwall/gjson"
+	"github.com/tidwall/sjson"
 	"github.com/urfave/cli/v2"
 	"io/ioutil"
 	"math/rand"
@@ -18,6 +19,8 @@ var cmdDump = &cli.Command{
 	UsageText: "elasticblaster dump SERVER INDEX",
 	Action:    execDump,
 }
+
+var settingsToRemove = []string{"settings.index.creation_date", "settings.index.uuid", "settings.index.version", "settings.index.provided_name"}
 
 func execDump(c *cli.Context) error {
 	rand.Seed(time.Now().UnixNano())
@@ -46,6 +49,12 @@ func execDump(c *cli.Context) error {
 		return err
 	}
 	mapping := gjson.GetBytes(rawMapping, index).String()
+	for _, keyToRemove := range settingsToRemove {
+		mapping, err = sjson.Delete(mapping, keyToRemove)
+		if err != nil {
+			return err
+		}
+	}
 	fmt.Fprintln(c.App.Writer, mapping)
 
 	// Initial search request
