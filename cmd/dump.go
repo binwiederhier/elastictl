@@ -5,6 +5,7 @@ import (
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 	"github.com/urfave/cli/v2"
+	"io"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -18,12 +19,17 @@ var cmdDump = &cli.Command{
 	Usage:     "Dump an entire index to STDOUT",
 	UsageText: "elasticblaster dump SERVER INDEX",
 	Action:    execDump,
+	Flags: []cli.Flag{
+		&cli.StringFlag{Name: "search", Aliases: []string{"q"}, Value: "", Usage: "only dump documents matching the given ES query"},
+	},
 }
 
 var settingsToRemove = []string{"settings.index.creation_date", "settings.index.uuid", "settings.index.version", "settings.index.provided_name"}
 
 func execDump(c *cli.Context) error {
 	rand.Seed(time.Now().UnixNano())
+
+	search := c.String("search")
 
 	if c.NArg() < 2 {
 		return cli.Exit("invalid syntax: ES host and/or index missing", 1)
@@ -58,8 +64,12 @@ func execDump(c *cli.Context) error {
 	fmt.Fprintln(c.App.Writer, mapping)
 
 	// Initial search request
-	uri := fmt.Sprintf("%s/_search?scroll=1m", rootIndexURI)
-	req, err = http.NewRequest("POST", uri, strings.NewReader(`{"size":10000}`))
+	var body io.Reader
+	if search != "" {
+		body = strings.NewReader(search)
+	}
+	uri := fmt.Sprintf("%s/_search?size=10000&scroll=1m", rootIndexURI)
+	req, err = http.NewRequest("POST", uri, body)
 	if err != nil {
 		return err
 	}
@@ -80,7 +90,7 @@ func execDump(c *cli.Context) error {
 
 		scrollID := gjson.GetBytes(body, "_scroll_id")
 		if !scrollID.Exists() {
-			return cli.Exit("no scroll id: " + string(body), 1)
+			return cli.Exit("no scroll id: "+string(body), 1)
 		}
 
 		hits := gjson.GetBytes(body, "hits.hits")

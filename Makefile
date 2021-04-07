@@ -111,10 +111,8 @@ release-snapshot:
 # Installing targets
 
 install:
-	sudo rm -f /usr/bin/elasticblaster /usr/bin/pcp /usr/bin/ppaste
+	sudo rm -f /usr/bin/elasticblaster
 	sudo cp -a dist/elasticblaster_linux_amd64/elasticblaster /usr/bin/elasticblaster
-	sudo ln -s /usr/bin/elasticblaster /usr/bin/pcp
-	sudo ln -s /usr/bin/elasticblaster /usr/bin/ppaste
 
 install-deb:
 	sudo systemctl stop elasticblaster || true

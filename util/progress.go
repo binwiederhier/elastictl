@@ -10,13 +10,13 @@ import (
 var spinner = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 
 type ProgressBar struct {
-	started time.Time
-	count int
-	size int64
-	rendered time.Time
+	started     time.Time
+	count       int
+	size        int64
+	rendered    time.Time
 	rendercount int64
-	prevlen int
-	mu sync.Mutex
+	prevlen     int
+	mu          sync.Mutex
 }
 
 func NewProgressBar() *ProgressBar {
@@ -30,7 +30,7 @@ func (p *ProgressBar) Add(size int64) {
 	defer p.mu.Unlock()
 	p.count++
 	p.size += size
-	if time.Since(p.rendered) > 65 * time.Millisecond {
+	if time.Since(p.rendered) > 65*time.Millisecond {
 		p.render(false)
 	}
 }
@@ -81,4 +81,3 @@ func bytesToHuman(b int64) string {
 	return fmt.Sprintf("%.1f %cB",
 		float64(b)/float64(div), "kMGTPE"[exp])
 }
-
