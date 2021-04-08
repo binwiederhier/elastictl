@@ -13,12 +13,12 @@ import (
 	"time"
 )
 
-var cmdDump = &cli.Command{
-	Name:      "dump",
-	Aliases:   []string{"d"},
-	Usage:     "Dump an entire index to STDOUT",
-	UsageText: "elastictl dump SERVER INDEX",
-	Action:    execDump,
+var cmdExport = &cli.Command{
+	Name:      "export",
+	Aliases:   []string{"e"},
+	Usage:     "Export an entire index to STDOUT",
+	UsageText: "elastictl export SERVER INDEX",
+	Action:    execExport,
 	Flags: []cli.Flag{
 		&cli.StringFlag{Name: "search", Aliases: []string{"q"}, Value: "", Usage: "only dump documents matching the given ES query"},
 	},
@@ -26,7 +26,7 @@ var cmdDump = &cli.Command{
 
 var settingsToRemove = []string{"settings.index.creation_date", "settings.index.uuid", "settings.index.version", "settings.index.provided_name"}
 
-func execDump(c *cli.Context) error {
+func execExport(c *cli.Context) error {
 	rand.Seed(time.Now().UnixNano())
 
 	search := c.String("search")

@@ -17,7 +17,7 @@ import (
 
 var cmdReshard = &cli.Command{
 	Name:    "reshard",
-	Aliases: []string{"c"},
+	Aliases: []string{"r"},
 	Action:  execReshard,
 }
 

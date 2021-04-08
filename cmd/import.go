@@ -18,11 +18,11 @@ import (
 )
 
 var cmdBlast = &cli.Command{
-	Name:      "blast",
-	Aliases:   []string{"b"},
-	Usage:     "Write to ES index, either from STDIN",
-	UsageText: "elastictl blast SERVER INDEX",
-	Action:    execBlast,
+	Name:      "import",
+	Aliases:   []string{"i"},
+	Usage:     "Write to ES index from STDIN",
+	UsageText: "elastictl import SERVER INDEX",
+	Action:    execImport,
 	Flags: []cli.Flag{
 		&cli.IntFlag{Name: "workers", Aliases: []string{"w"}, Value: 100, Usage: "number of concurrent workers"},
 		&cli.IntFlag{Name: "shards", Aliases: []string{"s"}, Value: 0, Usage: "override the number of shards on index creation"},
@@ -31,7 +31,7 @@ var cmdBlast = &cli.Command{
 	},
 }
 
-func execBlast(c *cli.Context) error {
+func execImport(c *cli.Context) error {
 	rand.Seed(time.Now().UnixNano())
 
 	workers := c.Int("workers")

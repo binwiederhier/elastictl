@@ -10,7 +10,7 @@ import (
 func New() *cli.App {
 	return &cli.App{
 		Name:                   "elastictl",
-		Usage:                  "copy/paste across machines",
+		Usage:                  "Elasticsearch toolkit",
 		UsageText:              "elastictl COMMAND [OPTION..] [ARG..]",
 		HideHelp:               true,
 		HideVersion:            true,
@@ -20,7 +20,7 @@ func New() *cli.App {
 		Writer:                 os.Stdout,
 		ErrWriter:              os.Stderr,
 		Commands: []*cli.Command{
-			cmdDump,
+			cmdExport,
 			cmdBlast,
 			cmdReshard,
 		},
