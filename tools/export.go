@@ -4,11 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/tidwall/gjson"
-	"github.com/urfave/cli/v2"
+	"heckel.io/elastictl/util"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 )
 
@@ -49,10 +50,12 @@ func Export(host string, index string, search string, w io.Writer) error {
 	if err != nil {
 		return err
 	}
-
 	if resp.Body == nil {
 		return err
 	}
+
+	total := int64(-1)
+	progress := util.NewProgressBar(os.Stderr)
 
 	for {
 		body, err := ioutil.ReadAll(resp.Body)
@@ -60,25 +63,29 @@ func Export(host string, index string, search string, w io.Writer) error {
 			return err
 		}
 
+		if total == -1 {
+			t := gjson.GetBytes(body, "hits.total")
+			if !t.Exists() {
+				return errors.New("no total")
+			}
+			total = t.Int()
+		}
+
 		scrollID := gjson.GetBytes(body, "_scroll_id")
 		if !scrollID.Exists() {
-			return cli.Exit("no scroll id: "+string(body), 1)
+			return errors.New("no scroll id: "+string(body))
 		}
 
 		hits := gjson.GetBytes(body, "hits.hits")
-		if !hits.Exists() {
-			return errors.New("no hits")
+		if !hits.Exists() || !hits.IsArray() {
+			return errors.New("no hits: "+string(body))
 		}
-
-		if !hits.IsArray() {
-			return errors.New("no hits array")
-		}
-
 		if len(hits.Array()) == 0 {
-			break
+			break // we're done!
 		}
 
 		for _, hit := range hits.Array() {
+			progress.Add(1)
 			if _, err := fmt.Fprintln(w, hit.Raw); err != nil {
 				return err
 			}
@@ -100,6 +107,6 @@ func Export(host string, index string, search string, w io.Writer) error {
 			return err
 		}
 	}
-	log.Printf("export complete")
+	progress.Done()
 	return nil
 }

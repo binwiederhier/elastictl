@@ -85,7 +85,6 @@ func Import(host string, index string, workers int, nocreate bool, shards int, r
 
 	wg.Wait()
 	progress.Done()
-	log.Printf("import complete")
 
 	return nil
 }

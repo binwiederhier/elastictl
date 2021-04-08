@@ -39,12 +39,11 @@ func Reshard(host string, index string, dir string, keep bool, search string, wo
 		file.Close()
 		os.Remove(filename)
 	}
+	log.Printf("resharding complete")
 	return nil
 }
 
 func deleteIndex(host, index string) error {
-	log.Printf("deleting index %s", index)
-
 	indexURI := fmt.Sprintf("http://%s/%s", host, index)
 	req, err := http.NewRequest("DELETE", indexURI, nil)
 	if err != nil {

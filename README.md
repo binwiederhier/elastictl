@@ -9,8 +9,15 @@ Usage:
 go build 
 
 # Dump index
-./elastictl dump localhost:9200 dummy > dummy.json
+elastictl export dummy > dummy.json
 
 # Insert index with high concurrency
-cat dummy.json | ./elastictl blast -workers 100 localhost:9200 dummy-copy
+cat dummy.json | elastictl import --workers 100 dummy-copy
+
+# Reshard (import/export) an index
+elastictl reshard \
+  --search '{"query":{"bool":{"must_not":{"match":{"eventType":"Success"}}}}}' \
+  --shards 1 \
+  --replicas 1 \
+  dummy-index
 ```

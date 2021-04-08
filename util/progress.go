@@ -50,8 +50,9 @@ func (p *ProgressBar) render(done bool) {
 	countPerSec := float64(p.count) / time.Since(p.started).Seconds()
 	size := bytesToHuman(p.size)
 	sizePerSec := bytesToHuman(int64(float64(p.size) / time.Since(p.started).Seconds()))
+	now := time.Now().Format("2006/01/02 15:04:05")
 	if done {
-		line := fmt.Sprintf("\rindexing finished: %d docs (%.2f docs/s), %s (%s/s)", count, countPerSec, size, sizePerSec)
+		line := fmt.Sprintf("\r%s complete: %d docs (%.2f docs/s), %s (%s/s)", now, count, countPerSec, size, sizePerSec)
 		fmt.Fprint(p.writer, line)
 		if p.prevlen > len(line) {
 			fmt.Fprint(p.writer, strings.Repeat(" ", p.prevlen-len(line)))
@@ -59,7 +60,7 @@ func (p *ProgressBar) render(done bool) {
 		fmt.Fprintln(p.writer)
 		p.prevlen = len(line)
 	} else {
-		line := fmt.Sprintf("\r%s indexing: %d docs (%.2f docs/s), %s (%s/s)", spin, count, countPerSec, size, sizePerSec)
+		line := fmt.Sprintf("\r%s %s processing: %d docs (%.2f docs/s), %s (%s/s)", now, spin, count, countPerSec, size, sizePerSec)
 		fmt.Fprint(p.writer, line)
 		if p.prevlen > len(line) {
 			fmt.Fprint(p.writer, strings.Repeat(" ", p.prevlen-len(line)))
