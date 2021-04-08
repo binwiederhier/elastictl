@@ -1,4 +1,4 @@
-// Package cmd provides the elasticblaster CLI application
+// Package cmd provides the elastictl CLI application
 package cmd
 
 import (
@@ -9,9 +9,9 @@ import (
 // New creates a new CLI application
 func New() *cli.App {
 	return &cli.App{
-		Name:                   "elasticblaster",
+		Name:                   "elastictl",
 		Usage:                  "copy/paste across machines",
-		UsageText:              "elasticblaster COMMAND [OPTION..] [ARG..]",
+		UsageText:              "elastictl COMMAND [OPTION..] [ARG..]",
 		HideHelp:               true,
 		HideVersion:            true,
 		EnableBashCompletion:   true,
@@ -22,6 +22,7 @@ func New() *cli.App {
 		Commands: []*cli.Command{
 			cmdDump,
 			cmdBlast,
+			cmdReshard,
 		},
 	}
 }

@@ -1,6 +1,6 @@
 *.iml
 .idea/
-elasticblaster
+elastictl
 dist/
 build/
 testdata/

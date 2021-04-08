@@ -6,7 +6,7 @@ import (
 	"github.com/tidwall/gjson"
 	"github.com/tidwall/sjson"
 	"github.com/urfave/cli/v2"
-	"heckel.io/elasticblaster/util"
+	"heckel.io/elastictl/util"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -21,7 +21,7 @@ var cmdBlast = &cli.Command{
 	Name:      "blast",
 	Aliases:   []string{"b"},
 	Usage:     "Write to ES index, either from STDIN",
-	UsageText: "elasticblaster blast SERVER INDEX",
+	UsageText: "elastictl blast SERVER INDEX",
 	Action:    execBlast,
 	Flags: []cli.Flag{
 		&cli.IntFlag{Name: "workers", Aliases: []string{"w"}, Value: 100, Usage: "number of concurrent workers"},

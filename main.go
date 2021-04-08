@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/urfave/cli/v2"
-	"heckel.io/elasticblaster/cmd"
+	"heckel.io/elastictl/cmd"
 	"os"
 	"runtime"
 )
@@ -16,9 +16,9 @@ var (
 
 func main() {
 	cli.AppHelpTemplate += fmt.Sprintf(`
-Try 'elasticblaster COMMAND --help' for more information.
+Try 'elastictl COMMAND --help' for more information.
 
-elasticblaster %s (%s), runtime %s, built at %s
+elastictl %s (%s), runtime %s, built at %s
 Copyright (C) 2021 Philipp C. Heckel, distributed under the Apache License 2.0
 `, version, commit[:7], runtime.Version(), date)
 

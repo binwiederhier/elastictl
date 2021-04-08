@@ -17,7 +17,7 @@ var cmdDump = &cli.Command{
 	Name:      "dump",
 	Aliases:   []string{"d"},
 	Usage:     "Dump an entire index to STDOUT",
-	UsageText: "elasticblaster dump SERVER INDEX",
+	UsageText: "elastictl dump SERVER INDEX",
 	Action:    execDump,
 	Flags: []cli.Flag{
 		&cli.StringFlag{Name: "search", Aliases: []string{"q"}, Value: "", Usage: "only dump documents matching the given ES query"},

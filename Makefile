@@ -89,9 +89,9 @@ build-snapshot:
 	goreleaser build --snapshot --rm-dist
 
 build-simple: clean
-	mkdir -p dist/elasticblaster_linux_amd64
+	mkdir -p dist/elastictl_linux_amd64
 	$(GO) build \
-		-o dist/elasticblaster_linux_amd64/elasticblaster \
+		-o dist/elastictl_linux_amd64/elastictl \
 		-ldflags \
 		"-s -w -X main.version=$(VERSION) -X main.commit=$(shell git rev-parse --short HEAD) -X main.date=$(shell date +%s)"
 
@@ -111,10 +111,10 @@ release-snapshot:
 # Installing targets
 
 install:
-	sudo rm -f /usr/bin/elasticblaster
-	sudo cp -a dist/elasticblaster_linux_amd64/elasticblaster /usr/bin/elasticblaster
+	sudo rm -f /usr/bin/elastictl
+	sudo cp -a dist/elastictl_linux_amd64/elastictl /usr/bin/elastictl
 
 install-deb:
-	sudo systemctl stop elasticblaster || true
-	sudo apt-get purge elasticblaster || true
+	sudo systemctl stop elastictl || true
+	sudo apt-get purge elastictl || true
 	sudo dpkg -i dist/*.deb

@@ -1,4 +1,4 @@
-module heckel.io/elasticblaster
+module heckel.io/elastictl
 
 go 1.15
 

@@ -2,7 +2,7 @@ before:
   hooks:
     - go mod download
 builds:
-  - binary: elasticblaster
+  - binary: elastictl
     env:
       - CGO_ENABLED=0
     goos:
@@ -11,9 +11,9 @@ builds:
       - amd64
 nfpms:
   -
-    package_name: elasticblaster
+    package_name: elastictl
     file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Arch }}"
-    homepage: https://heckel.io/elasticblaster
+    homepage: https://heckel.io/elastictl
     maintainer: Philipp C. Heckel <philipp.heckel@gmail.com>
     description: Simple load generating and index copying tool for Elasticsearch
     license: Apache 2.0
@@ -38,8 +38,8 @@ changelog:
 dockers:
   - dockerfile: Dockerfile
     ids:
-      - elasticblaster
+      - elastictl
     image_templates:
-      - "binwiederhier/elasticblaster:latest"
-      - "binwiederhier/elasticblaster:{{ .Tag }}"
-      - "binwiederhier/elasticblaster:v{{ .Major }}.{{ .Minor }}"
+      - "binwiederhier/elastictl:latest"
+      - "binwiederhier/elastictl:{{ .Tag }}"
+      - "binwiederhier/elastictl:v{{ .Major }}.{{ .Minor }}"
