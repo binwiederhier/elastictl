@@ -15,6 +15,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 )
 
 var (
@@ -22,14 +23,14 @@ var (
 	settingsToRemove = []string{"settings.index.creation_date", "settings.index.uuid", "settings.index.version", "settings.index.provided_name"}
 )
 
-func Import(host string, index string, workers int, nocreate bool, shards int, replicas int, r io.Reader, totalHint int) error {
+func Import(host string, index string, workers int, nocreate bool, shards int, replicas int, r io.Reader, totalHint int) (int, error) {
 	log.Printf("importing index %s/%s", host, index)
 	rootURI := fmt.Sprintf("http://%s/%s", host, index)
 	scanner := bufio.NewScanner(r)
 
 	// Create index
 	if !scanner.Scan() {
-		return errors.New("cannot read mapping")
+		return 0, errors.New("cannot read mapping")
 	}
 	mapping := scanner.Text()
 	if !nocreate {
@@ -37,31 +38,31 @@ func Import(host string, index string, workers int, nocreate bool, shards int, r
 		for _, keyToRemove := range settingsToRemove {
 			mapping, err = sjson.Delete(mapping, keyToRemove)
 			if err != nil {
-				return err
+				return 0, err
 			}
 		}
 		if shards > 0 {
 			mapping, err = sjson.Set(mapping, "settings.index.number_of_shards", fmt.Sprintf("%d", shards))
 			if err != nil {
-				return err
+				return 0, err
 			}
 		}
 		if replicas > -1 { // zero replicas is allowed!
 			mapping, err = sjson.Set(mapping, "settings.index.number_of_replicas", fmt.Sprintf("%d", replicas))
 			if err != nil {
-				return err
+				return 0, err
 			}
 		}
 		req, err := http.NewRequest("PUT", rootURI, strings.NewReader(mapping))
 		if err != nil {
-			return err
+			return 0, err
 		}
 		resp, err := client.Do(req)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		if resp.StatusCode != 201 && resp.StatusCode != 200 {
-			return fmt.Errorf("unexpected response code during index creation: %d", resp.StatusCode)
+			return 0, fmt.Errorf("unexpected response code during index creation: %d", resp.StatusCode)
 		}
 	}
 
@@ -71,9 +72,10 @@ func Import(host string, index string, workers int, nocreate bool, shards int, r
 	wg := &sync.WaitGroup{}
 	docsChan := make(chan string)
 	progress := util.NewProgressBarWithTotal(os.Stderr, totalHint)
+	imported := int64(0)
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
-		go importWorker(wg, docsChan, progress, client, rootURI)
+		go importWorker(wg, docsChan, progress, client, rootURI, &imported)
 	}
 
 	go func() {
@@ -86,10 +88,10 @@ func Import(host string, index string, workers int, nocreate bool, shards int, r
 	wg.Wait()
 	progress.Done()
 
-	return nil
+	return int(imported), nil
 }
 
-func importWorker(wg *sync.WaitGroup, docsChan chan string, progress *util.ProgressBar, client *http.Client, rootURI string) {
+func importWorker(wg *sync.WaitGroup, docsChan chan string, progress *util.ProgressBar, client *http.Client, rootURI string, imported *int64) {
 	defer wg.Done()
 	for doc := range docsChan {
 		id := url.QueryEscape(gjson.Get(doc, "_id").String())
@@ -115,5 +117,6 @@ func importWorker(wg *sync.WaitGroup, docsChan chan string, progress *util.Progr
 			resp.Body.Close()
 		}
 		progress.Add(int64(len(source)))
+		atomic.AddInt64(imported, 1)
 	}
 }

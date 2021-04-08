@@ -24,10 +24,8 @@ func Reshard(host string, index string, dir string, keep bool, search string, wo
 		return err
 	}
 	defer file.Close()
-	if err := Export(host, index, search, file); err != nil {
-		return err
-	}
-	if err := deleteIndex(host, index); err != nil {
+	exported, err := Export(host, index, search, file)
+	if err != nil {
 		return err
 	}
 	if _, err := file.Seek(0,0); err != nil {
@@ -37,11 +35,21 @@ func Reshard(host string, index string, dir string, keep bool, search string, wo
 	if err != nil {
 		return err
 	}
+	if exported != lines-1 {
+		return fmt.Errorf("unexpected count: %d documents expected in exported file, got %d", exported, lines-1)
+	}
 	if _, err := file.Seek(0,0); err != nil {
 		return err
 	}
-	if err := Import(host, index, workers, false, shards, replicas, file, lines-1); err != nil {
+	if err := deleteIndex(host, index); err != nil {
 		return err
+	}
+	imported, err := Import(host, index, workers, false, shards, replicas, file, exported)
+	if err != nil {
+		return err
+	}
+	if imported != exported {
+		return fmt.Errorf("count mismatch: %d documents exported, but %d imported", exported, imported)
 	}
 	if !keep {
 		file.Close()

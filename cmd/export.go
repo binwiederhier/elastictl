@@ -24,5 +24,6 @@ func execExport(c *cli.Context) error {
 		return cli.Exit("invalid syntax: index missing", 1)
 	}
 	index := c.Args().Get(0)
-	return tools.Export(host, index, search, c.App.Writer)
+	_, err := tools.Export(host, index, search, c.App.Writer)
+	return err
 }

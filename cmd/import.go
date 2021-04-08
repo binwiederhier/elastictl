@@ -16,19 +16,20 @@ var cmdBlast = &cli.Command{
 		&cli.IntFlag{Name: "workers", Aliases: []string{"w"}, Value: 50, Usage: "number of concurrent workers"},
 		&cli.IntFlag{Name: "shards", Aliases: []string{"s"}, Value: -1, DefaultText: "no change", Usage: "override the number of shards on index creation"},
 		&cli.IntFlag{Name: "replicas", Aliases: []string{"r"}, Value: -1, DefaultText: "no change", Usage: "override the number of replicas on index creation"},
-		&cli.BoolFlag{Name: "nocreate", Aliases: []string{"N"}, Value: false, Usage: "do not create index"},
+		&cli.BoolFlag{Name: "no-create", Aliases: []string{"N"}, Value: false, Usage: "do not create index"},
 	},
 }
 
 func execImport(c *cli.Context) error {
 	host := c.String("host")
 	workers := c.Int("workers")
-	nocreate := c.Bool("nocreate")
+	nocreate := c.Bool("no-create")
 	shards := c.Int("shards")
 	replicas := c.Int("replicas")
 	if c.NArg() < 1 {
 		return cli.Exit("invalid syntax: index missing", 1)
 	}
 	index := c.Args().Get(0)
-	return tools.Import(host, index, workers, nocreate, shards, replicas, c.App.Reader, -1)
+	_, err := tools.Import(host, index, workers, nocreate, shards, replicas, c.App.Reader, -1)
+	return err
 }
