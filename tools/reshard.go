@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -32,7 +33,14 @@ func Reshard(host string, index string, dir string, keep bool, search string, wo
 	if _, err := file.Seek(0,0); err != nil {
 		return err
 	}
-	if err := Import(host, index, workers, false, shards, replicas, file); err != nil {
+	lines, err := lineCounter(file)
+	if err != nil {
+		return err
+	}
+	if _, err := file.Seek(0,0); err != nil {
+		return err
+	}
+	if err := Import(host, index, workers, false, shards, replicas, file, lines-1); err != nil {
 		return err
 	}
 	if !keep {
@@ -62,4 +70,24 @@ func deleteIndex(host, index string) error {
 		return fmt.Errorf("unexpected response code during delete call: %d %s\n", resp.StatusCode, string(responseBody))
 	}
 	return nil
+}
+
+func lineCounter(r io.Reader) (int, error) {
+	// From: https://stackoverflow.com/questions/24562942/golang-how-do-i-determine-the-number-of-lines-in-a-file-efficiently
+	buf := make([]byte, 32*1024)
+	count := 0
+	lineSep := []byte{'\n'}
+
+	for {
+		c, err := r.Read(buf)
+		count += bytes.Count(buf[:c], lineSep)
+
+		switch {
+		case err == io.EOF:
+			return count, nil
+
+		case err != nil:
+			return count, err
+		}
+	}
 }

@@ -54,8 +54,7 @@ func Export(host string, index string, search string, w io.Writer) error {
 		return err
 	}
 
-	total := int64(-1)
-	progress := util.NewProgressBar(os.Stderr)
+	var progress *util.ProgressBar
 
 	for {
 		body, err := ioutil.ReadAll(resp.Body)
@@ -63,12 +62,12 @@ func Export(host string, index string, search string, w io.Writer) error {
 			return err
 		}
 
-		if total == -1 {
-			t := gjson.GetBytes(body, "hits.total")
-			if !t.Exists() {
+		if progress == nil {
+			total := gjson.GetBytes(body, "hits.total")
+			if !total.Exists() {
 				return errors.New("no total")
 			}
-			total = t.Int()
+			progress = util.NewProgressBarWithTotal(os.Stderr, int(total.Int()))
 		}
 
 		scrollID := gjson.GetBytes(body, "_scroll_id")

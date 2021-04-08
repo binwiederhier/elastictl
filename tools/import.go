@@ -22,7 +22,7 @@ var (
 	settingsToRemove = []string{"settings.index.creation_date", "settings.index.uuid", "settings.index.version", "settings.index.provided_name"}
 )
 
-func Import(host string, index string, workers int, nocreate bool, shards int, replicas int, r io.Reader) error {
+func Import(host string, index string, workers int, nocreate bool, shards int, replicas int, r io.Reader, totalHint int) error {
 	log.Printf("importing index %s/%s", host, index)
 	rootURI := fmt.Sprintf("http://%s/%s", host, index)
 	scanner := bufio.NewScanner(r)
@@ -70,7 +70,7 @@ func Import(host string, index string, workers int, nocreate bool, shards int, r
 
 	wg := &sync.WaitGroup{}
 	docsChan := make(chan string)
-	progress := util.NewProgressBar(os.Stderr)
+	progress := util.NewProgressBarWithTotal(os.Stderr, totalHint)
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
 		go importWorker(wg, docsChan, progress, client, rootURI)

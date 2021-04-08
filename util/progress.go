@@ -14,6 +14,7 @@ type ProgressBar struct {
 	started     time.Time
 	writer io.Writer
 	count       int
+	total       int
 	size        int64
 	rendered    time.Time
 	rendercount int64
@@ -22,9 +23,14 @@ type ProgressBar struct {
 }
 
 func NewProgressBar(writer io.Writer) *ProgressBar {
+	return NewProgressBarWithTotal(writer, 0)
+}
+
+func NewProgressBarWithTotal(writer io.Writer, total int) *ProgressBar {
 	return &ProgressBar{
 		started: time.Now(),
 		writer: writer,
+		total: total,
 	}
 }
 
@@ -52,7 +58,7 @@ func (p *ProgressBar) render(done bool) {
 	sizePerSec := bytesToHuman(int64(float64(p.size) / time.Since(p.started).Seconds()))
 	now := time.Now().Format("2006/01/02 15:04:05")
 	if done {
-		line := fmt.Sprintf("\r%s complete: %d docs (%.2f docs/s), %s (%s/s)", now, count, countPerSec, size, sizePerSec)
+		line := fmt.Sprintf("\r%s complete: %d docs (%.1f docs/s), %s (%s/s)", now, count, countPerSec, size, sizePerSec)
 		fmt.Fprint(p.writer, line)
 		if p.prevlen > len(line) {
 			fmt.Fprint(p.writer, strings.Repeat(" ", p.prevlen-len(line)))
@@ -60,7 +66,11 @@ func (p *ProgressBar) render(done bool) {
 		fmt.Fprintln(p.writer)
 		p.prevlen = len(line)
 	} else {
-		line := fmt.Sprintf("\r%s %s processing: %d docs (%.2f docs/s), %s (%s/s)", now, spin, count, countPerSec, size, sizePerSec)
+		percent := ""
+		if p.total > 0 {
+			percent = fmt.Sprintf(" %.1f%%,", float64(count)/float64(p.total)*100)
+		}
+		line := fmt.Sprintf("\r%s %s processing:%s %d docs (%.1f docs/s), %s (%s/s)", now, spin, percent, count, countPerSec, size, sizePerSec)
 		fmt.Fprint(p.writer, line)
 		if p.prevlen > len(line) {
 			fmt.Fprint(p.writer, strings.Repeat(" ", p.prevlen-len(line)))

@@ -30,5 +30,5 @@ func execImport(c *cli.Context) error {
 		return cli.Exit("invalid syntax: index missing", 1)
 	}
 	index := c.Args().Get(0)
-	return tools.Import(host, index, workers, nocreate, shards, replicas, c.App.Reader)
+	return tools.Import(host, index, workers, nocreate, shards, replicas, c.App.Reader, -1)
 }
