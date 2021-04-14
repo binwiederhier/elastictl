@@ -46,8 +46,8 @@ func Reshard(host string, index string, dir string, keep bool, search string, wo
 			return err
 		}
 		imported, err := Import(host, index, workers, false, shards, replicas, file, exported)
-		if err == errBadRequest && i < 10 {
-			// retry on bad requests up to 10 times; races on index creation do happen when
+		if err == errTemporaryFailure && i < 10 {
+			// retry on temporary failures up to 10 times; races on index creation do happen when
 			// the index is busy and auto-creation of the index is turned on.
 			continue
 		} else if err != nil {
