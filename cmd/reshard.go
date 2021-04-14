@@ -6,11 +6,11 @@ import (
 )
 
 var cmdReshard = &cli.Command{
-	Name:    "reshard",
-	Aliases: []string{"r"},
+	Name:      "reshard",
+	Aliases:   []string{"r"},
 	Usage:     "Reshard index using different shard/replica counts",
 	UsageText: "elastictl reshard INDEX",
-	Action:  execReshard,
+	Action:    execReshard,
 	Flags: []cli.Flag{
 		&cli.StringFlag{Name: "host", Aliases: []string{"H"}, Value: "localhost:9200", DefaultText: "localhost:9200", Usage: "override default host"},
 		&cli.StringFlag{Name: "search", Aliases: []string{"q"}, Value: "", Usage: "only dump documents matching the given ES query"},

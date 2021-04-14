@@ -73,12 +73,12 @@ func Export(host string, index string, search string, w io.Writer) (int, error) 
 
 		scrollID := gjson.GetBytes(body, "_scroll_id")
 		if !scrollID.Exists() {
-			return 0, errors.New("no scroll id: "+string(body))
+			return 0, errors.New("no scroll id: " + string(body))
 		}
 
 		hits := gjson.GetBytes(body, "hits.hits")
 		if !hits.Exists() || !hits.IsArray() {
-			return 0, errors.New("no hits: "+string(body))
+			return 0, errors.New("no hits: " + string(body))
 		}
 		if len(hits.Array()) == 0 {
 			break // we're done!

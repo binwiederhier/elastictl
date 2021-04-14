@@ -12,7 +12,7 @@ var spinner = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "
 
 type ProgressBar struct {
 	started     time.Time
-	writer io.Writer
+	writer      io.Writer
 	count       int
 	total       int
 	size        int64
@@ -29,8 +29,8 @@ func NewProgressBar(writer io.Writer) *ProgressBar {
 func NewProgressBarWithTotal(writer io.Writer, total int) *ProgressBar {
 	return &ProgressBar{
 		started: time.Now(),
-		writer: writer,
-		total: total,
+		writer:  writer,
+		total:   total,
 	}
 }
 

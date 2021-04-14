@@ -19,8 +19,9 @@ import (
 )
 
 var (
-	client = &http.Client{}
+	client           = &http.Client{}
 	settingsToRemove = []string{"settings.index.creation_date", "settings.index.uuid", "settings.index.version", "settings.index.provided_name"}
+	errBadRequest    = errors.New("bad request")
 )
 
 func Import(host string, index string, workers int, nocreate bool, shards int, replicas int, r io.Reader, totalHint int) (int, error) {
@@ -61,7 +62,9 @@ func Import(host string, index string, workers int, nocreate bool, shards int, r
 		if err != nil {
 			return 0, err
 		}
-		if resp.StatusCode != 201 && resp.StatusCode != 200 {
+		if resp.StatusCode == 400 {
+			return 0, errBadRequest // special case: returned when index already exists
+		} else if resp.StatusCode != 201 && resp.StatusCode != 200 {
 			return 0, fmt.Errorf("unexpected response code during index creation: %d", resp.StatusCode)
 		}
 	}

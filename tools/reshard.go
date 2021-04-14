@@ -19,7 +19,7 @@ func Reshard(host string, index string, dir string, keep bool, search string, wo
 		}
 	}
 	filename := filepath.Join(dir, fmt.Sprintf("%s.json", index))
-	file, err := os.OpenFile(filename, os.O_CREATE | os.O_TRUNC | os.O_RDWR, 0600)
+	file, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0600)
 	if err != nil {
 		return err
 	}
@@ -28,7 +28,7 @@ func Reshard(host string, index string, dir string, keep bool, search string, wo
 	if err != nil {
 		return err
 	}
-	if _, err := file.Seek(0,0); err != nil {
+	if _, err := file.Seek(0, 0); err != nil {
 		return err
 	}
 	lines, err := lineCounter(file)
@@ -38,18 +38,25 @@ func Reshard(host string, index string, dir string, keep bool, search string, wo
 	if exported != lines-1 {
 		return fmt.Errorf("unexpected count: %d documents expected in exported file, got %d", exported, lines-1)
 	}
-	if _, err := file.Seek(0,0); err != nil {
-		return err
-	}
-	if err := deleteIndex(host, index); err != nil {
-		return err
-	}
-	imported, err := Import(host, index, workers, false, shards, replicas, file, exported)
-	if err != nil {
-		return err
-	}
-	if imported != exported {
-		return fmt.Errorf("count mismatch: %d documents exported, but %d imported", exported, imported)
+	for i := 0; ; i++ {
+		if _, err := file.Seek(0, 0); err != nil {
+			return err
+		}
+		if err := deleteIndex(host, index); err != nil {
+			return err
+		}
+		imported, err := Import(host, index, workers, false, shards, replicas, file, exported)
+		if err == errBadRequest && i < 10 {
+			// retry on bad requests up to 10 times; races on index creation do happen when
+			// the index is busy and auto-creation of the index is turned on.
+			continue
+		} else if err != nil {
+			return err
+		}
+		if imported != exported {
+			return fmt.Errorf("count mismatch: %d documents exported, but %d imported", exported, imported)
+		}
+		break
 	}
 	if !keep {
 		file.Close()
