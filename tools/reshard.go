@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 func Reshard(host string, index string, dir string, keep bool, search string, workers int, shards int, replicas int) error {
@@ -49,6 +50,7 @@ func Reshard(host string, index string, dir string, keep bool, search string, wo
 		if err == errTemporaryFailure && i < 10 {
 			// retry on temporary failures up to 10 times; races on index creation do happen when
 			// the index is busy and auto-creation of the index is turned on.
+			time.Sleep(time.Duration(i) * time.Second)
 			continue
 		} else if err != nil {
 			return err
