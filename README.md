@@ -18,6 +18,20 @@ Or via goreleaser:
 $ make [build | build-snapshot]
 ```
 
+## Installation
+For Debian/Ubuntu
+```
+wget https://github.com/binwiederhier/elastictl/releases/download/v0.0.5/elastictl_0.0.5_amd64.deb
+dpkg -i *.deb
+```
+
+All others:
+```
+wget https://github.com/binwiederhier/elastictl/releases/download/v0.0.5/elastictl_0.0.5_linux_x86_64.tar.gz
+tar zxvf elastictl_0.0.5_linux_x86_64.tar.gz
+./elastictl
+```
+
 ## Usage:
 
 ### Export/dump an index to a file
