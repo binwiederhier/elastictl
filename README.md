@@ -1,6 +1,6 @@
 # elastictl
 
-Simple tool import/export Elasticsearch indices into a file, and/or reshard an index. The tool can be used for:
+Simple tool to import/export Elasticsearch indices into a file, and/or reshard an index. The tool can be used for:
 
 * Backup/restore of an Elasticsearch index 
 * Performance test an Elasticsearch cluster (import with high concurrency, see `--workers`)
