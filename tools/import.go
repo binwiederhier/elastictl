@@ -55,6 +55,7 @@ func Import(host string, index string, workers int, nocreate bool, shards int, r
 			}
 		}
 		req, err := http.NewRequest("PUT", rootURI, strings.NewReader(mapping))
+        req.Header.Add("Content-Type", "application/json")
 		if err != nil {
 			return 0, err
 		}
@@ -102,6 +103,7 @@ func importWorker(wg *sync.WaitGroup, docsChan chan string, progress *util.Progr
 		source := gjson.Get(doc, "_source").String()
 		uri := fmt.Sprintf("%s/%s/%s", rootURI, dtype, id)
 		req, err := http.NewRequest("PUT", uri, strings.NewReader(source))
+        req.Header.Add("Content-Type", "application/json")
 		if err != nil {
 			fmt.Printf("error creating PUT request: %s\n", err.Error())
 			continue

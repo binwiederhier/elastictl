@@ -20,6 +20,7 @@ func Export(host string, index string, search string, w io.Writer) (int, error) 
 	// Dump mapping first
 	rootIndexURI := fmt.Sprintf("http://%s/%s", host, index)
 	req, err := http.NewRequest("GET", rootIndexURI, nil)
+    req.Header.Add("Content-Type", "application/json")
 	if err != nil {
 		return 0, err
 	}
@@ -43,6 +44,7 @@ func Export(host string, index string, search string, w io.Writer) (int, error) 
 	}
 	uri := fmt.Sprintf("%s/_search?size=10000&scroll=1m", rootIndexURI)
 	req, err = http.NewRequest("POST", uri, body)
+    req.Header.Add("Content-Type", "application/json")
 	if err != nil {
 		return 0, err
 	}
@@ -95,6 +97,7 @@ func Export(host string, index string, search string, w io.Writer) (int, error) 
 		uri := fmt.Sprintf("%s/_search/scroll", rootURI)
 		postBody := fmt.Sprintf(`{"scroll":"1m","scroll_id":"%s"}`, scrollID.String())
 		req, err := http.NewRequest("POST", uri, strings.NewReader(postBody))
+        req.Header.Add("Content-Type", "application/json")
 		if err != nil {
 			return 0, err
 		}
